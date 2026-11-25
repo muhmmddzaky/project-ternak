@@ -1,5 +1,5 @@
 /* ============================================================
-   main.js — NusaTernak Farm
+   main.js — AgroNusa Farm (PT AgroNusa Mandiri)
    Semua logika interaktif website ada di sini.
    Sections:
      1. Image Paths
@@ -9,18 +9,22 @@
      5. Hero Counter Animation
      6. Contact Form
      7. Product Card 3D Tilt
+     8. Hero Ken Burns
+     9. Product Data
+    10. Product Detail Modal
+    11. Toast Notification & Copy Coordinates
+    12. Catalog Button
 ============================================================ */
 
 /* ----------------------------------------------------------
    1. IMAGE PATHS
-   Ganti path di sini kalau kamu pindahkan folder images
+   Ganti path di sini kalau memindahkan folder images
 ---------------------------------------------------------- */
 const IMAGES = {
-  hero:  './images/hero-bg.jpg',
-  goat:  './images/product-goat.jpg',
-  eggs:  './images/product-eggs.jpg',
-  quail: './images/product-quail.jpg',
-  cow:   './images/product-cow.jpg',
+  hero: './images/hero-bg.jpg',
+  goat: './images/product-goat.jpg',
+  eggs: './images/product-eggs.jpg',
+  cow:  './images/product-cow.jpg',
 };
 
 /* ----------------------------------------------------------
@@ -28,22 +32,30 @@ const IMAGES = {
 ---------------------------------------------------------- */
 const navbar = document.getElementById('navbar');
 
-window.addEventListener('scroll', () => {
-  navbar.classList.toggle('scrolled', window.scrollY > 60);
-}, { passive: true });
+if (navbar) {
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 60);
+  }, { passive: true });
+}
 
 /* ----------------------------------------------------------
    3. MOBILE NAV — hamburger menu open/close
 ---------------------------------------------------------- */
-const hamburgerBtn  = document.getElementById('hamburgerBtn');
-const mobileNav     = document.getElementById('mobileNav');
+const hamburgerBtn   = document.getElementById('hamburgerBtn');
+const mobileNav      = document.getElementById('mobileNav');
 const mobileNavClose = document.getElementById('mobileNavClose');
 
-hamburgerBtn.addEventListener('click',  () => mobileNav.classList.add('open'));
-mobileNavClose.addEventListener('click', () => mobileNav.classList.remove('open'));
-document.querySelectorAll('.mobile-link').forEach(link =>
-  link.addEventListener('click', () => mobileNav.classList.remove('open'))
-);
+if (hamburgerBtn && mobileNav) {
+  hamburgerBtn.addEventListener('click', () => mobileNav.classList.add('open'));
+}
+if (mobileNavClose && mobileNav) {
+  mobileNavClose.addEventListener('click', () => mobileNav.classList.remove('open'));
+}
+if (mobileNav) {
+  document.querySelectorAll('.mobile-link').forEach(link =>
+    link.addEventListener('click', () => mobileNav.classList.remove('open'))
+  );
+}
 
 /* ----------------------------------------------------------
    4. SCROLL REVEAL — elemen muncul saat masuk viewport
@@ -73,19 +85,19 @@ function animateCounter(el, target, suffix = '', duration = 1800) {
 
   const step = (timestamp) => {
     if (!startTime) startTime = timestamp;
-    const progress  = Math.min((timestamp - startTime) / duration, 1);
-    const eased     = 1 - Math.pow(1 - progress, 3); // ease-out-cubic
-    el.textContent  = Math.floor(eased * target) + suffix;
+    const progress = Math.min((timestamp - startTime) / duration, 1);
+    const eased    = 1 - Math.pow(1 - progress, 3); // ease-out-cubic
+    el.textContent = Math.floor(eased * target) + suffix;
     if (progress < 1) requestAnimationFrame(step);
   };
 
   requestAnimationFrame(step);
 }
 
-// Konfigurasi setiap stat — sesuaikan angka di sini
+// Konfigurasi setiap stat
 const STATS = [
   { id: 'stat1', target: 500, suffix: '+'    },
-  { id: 'stat2', target: 4,   suffix: ''     },
+  { id: 'stat2', target: 5,   suffix: ''     },
   { id: 'stat3', target: 8,   suffix: ' Thn' },
   { id: 'stat4', target: 300, suffix: '+'    },
 ];
@@ -93,30 +105,45 @@ const STATS = [
 let countersStarted = false;
 const heroSection   = document.getElementById('hero');
 
-new IntersectionObserver(
-  ([entry]) => {
-    if (entry.isIntersecting && !countersStarted) {
-      countersStarted = true;
-      STATS.forEach(({ id, target, suffix }) => {
-        const el = document.getElementById(id);
-        if (el) animateCounter(el, target, suffix);
-      });
-    }
-  },
-  { threshold: 0.5 }
-).observe(heroSection);
+if (heroSection) {
+  new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting && !countersStarted) {
+        countersStarted = true;
+        STATS.forEach(({ id, target, suffix }) => {
+          const el = document.getElementById(id);
+          if (el) animateCounter(el, target, suffix);
+        });
+      }
+    },
+    { threshold: 0.5 }
+  ).observe(heroSection);
+}
 
 /* ----------------------------------------------------------
-   6. CONTACT FORM — feedback visual saat submit
+   6. CONTACT FORM — validasi & feedback visual saat submit
 ---------------------------------------------------------- */
 function handleSubmit(e) {
   e.preventDefault();
-  const btn = document.getElementById('submitBtn');
+  const form     = e.target;
+  const namaEl   = document.getElementById('nama');
+  const telEl    = document.getElementById('telepon');
+  const minatEl  = document.getElementById('minat');
+  const pesanEl  = document.getElementById('pesan');
+  const btn      = document.getElementById('submitBtn');
+
+  if (!namaEl || !telEl || !minatEl || !pesanEl || !btn) return;
+
+  if (!namaEl.value.trim() || !telEl.value.trim() || !minatEl.value || !pesanEl.value.trim()) {
+    showToast('⚠️ Mohon lengkapi seluruh kolom formulir dengan benar.');
+    return;
+  }
 
   // Tampilkan status sukses
-  btn.innerHTML  = '✅ Pesan Terkirim!';
+  btn.innerHTML        = '✅ Pesan Terkirim!';
   btn.style.background = 'var(--clr-green-mid)';
-  btn.disabled   = true;
+  btn.disabled         = true;
+  showToast('📬 Pesan Anda untuk PT AgroNusa Mandiri telah diterima!');
 
   // Reset setelah 3 detik
   setTimeout(() => {
@@ -126,7 +153,7 @@ function handleSubmit(e) {
       </svg>`;
     btn.style.background = '';
     btn.disabled = false;
-    e.target.reset();
+    form.reset();
   }, 3000);
 }
 
@@ -157,200 +184,209 @@ window.addEventListener('load', () => {
 });
 
 /* ----------------------------------------------------------
-   9. COMMODITY DATA (Foto ke-1 & Foto ke-3)
+   9. PRODUCT DATA — PT AgroNusa Mandiri (AgroNusa Farm)
 ---------------------------------------------------------- */
 const COMMODITIES = {
-  quail: {
-    title: 'ANEKA UNGGAS',
-    category: 'KOMODITI PETERNAKAN PT. ALGHONI ANAM',
-    emoji: '🪶',
-    headerBg: 'linear-gradient(135deg, hsl(140, 45%, 22%) 0%, hsl(143, 35%, 38%) 100%)',
+  beef: {
+    title: 'PREMIUM BEEF',
+    category: 'PRODUK PT AGRONUSA MANDIRI • BOGOR',
+    emoji: '🥩',
+    headerBg: 'linear-gradient(135deg, hsl(140, 42%, 20%) 0%, hsl(143, 34%, 36%) 100%)',
     sections: [
       {
         badge: 'PRODUK UTAMA',
-        title: 'PRODUK UTAMA',
-        desc: 'PRODUK YANG DITAWARKAN BERUPA TELUR PUYUH DAN TELUR ITIK SEGAR, DENGAN KUALITAS TERBAIK DAN ASUH (AMAN, SEHAT, UTUH DAN HALAL).',
-        img: IMAGES.eggs,
-        reverse: false,
-        tags: ['Telur Puyuh Segar', 'Telur Itik Organik', 'Standar ASUH', 'Kualitas Grade A']
-      },
-      {
-        badge: 'BURUNG PUYUH PETELUR',
-        title: 'COTURNIX JAPONICA',
-        desc: 'COTURNIX JAPONICA MERUPAKAN JENIS BURUNG PUYUH PETELUR YANG DIPELIHARA DI PETERNAKAN PT. ALGHONI ANAM. JENIS PUYUH INI DIPILIH KARENA MEMILIKI PRODUKSI TELUR YANG TINGGI, PEMELIHARAAN YANG EFISIEN DAN PERTUMBUHAN YANG CEPAT.',
-        img: IMAGES.quail,
-        reverse: true,
-        tags: ['Produksi Telur Tinggi', 'Pemeliharaan Efisien', 'Pertumbuhan Cepat', 'Kandang Bertingkat Modern']
-      },
-      {
-        badge: 'UNGGAS PILIHAN',
-        title: 'ITIK PAJAJARAN',
-        desc: 'ITIK PAJAJARAN MENJADI PILIHAN PT. ALGHONI ANAM UNTUK DIBUDIDAYAKAN. ITIK INI TERPILIH MENJADI UNGGAS YANG DIPELIHARA DI PT. ALGHONI ANAM KARENA PRODUKSI TELUR YANG TINGGI (270-300 BUTIR/TAHUN), DAYA ADAPTASI LINGKUNGAN DAN YOLK TELUR PEKAT.',
+        title: 'Daging Sapi Pilihan Grade A',
+        desc: 'Premium Beef dari AgroNusa Farm berasal dari sapi potong sehat yang dipelihara secara modern di Bogor dengan pakan hijauan dan konsentrat terukur sehingga menghasilkan daging empuk dan bernutrisi tinggi.',
         img: IMAGES.hero,
         reverse: false,
-        tags: ['270-300 Butir/Tahun', 'Yolk Kuning Telur Pekat', 'Adaptasi Cuaca Tropis', 'Pakan Bernutrisi']
+        tags: ['Potongan Segar Pilihan', 'Standar ASUH & Halal', 'Pengawasan Dokter Hewan', 'Bebas Pengawet']
+      },
+      {
+        badge: 'PENANGANAN MODERN',
+        title: 'Proses Higienis & Rantai Dingin',
+        desc: 'Setiap potongan daging sapi dikemas vakum secara higienis dan disimpan pada suhu rantai dingin terkontrol untuk mempertahankan kesegaran, warna alami, serta cita rasa daging.',
+        img: IMAGES.cow,
+        reverse: true,
+        tags: ['Kemasan Vakum Steril', 'Rantai Dingin Terjaga', 'Siap Masak Harian', 'Ketertelusuran Jelas']
       }
     ],
     promos: [
       {
-        badge: 'PRODUK OLAHAN',
-        title: 'MIX PLATER QUEPI & SOSTETIK',
-        prices: ['HANYA 7K - 8K !!'],
-        note: 'Gratis ongkir untuk daerah kampus IPB Sukabumi!',
+        badge: 'KEMASAN RITEL',
+        title: 'PREMIUM BEEF PACK 1 KG',
+        prices: ['Mulai Rp 135.000 / kg'],
+        note: 'Tersedia pilihan potongan Has Dalam, Has Luar, dan daging serbaguna.',
         bgClass: 'card-blue-a'
       },
       {
-        badge: 'OPEN ORDER SEGAR',
-        title: 'OPEN ORDER TELUR PUYUH DAN TELUR ITIK',
-        prices: ['Rp. 450 / butir (Telur Puyuh)', 'Rp. 2.500 / butir (Telur Itik)'],
-        note: 'Pemesanan partai besar maupun retail siap kami layani dengan standar pengemasan aman.',
+        badge: 'MITRA KULINER',
+        title: 'PASOKAN RESTORAN & KATERING',
+        prices: ['Harga Khusus Mitra Agribisnis'],
+        note: 'Pengiriman terjadwal dari Bogor untuk kebutuhan bisnis kuliner dan hotel.',
         bgClass: 'card-blue-b'
       }
     ]
   },
 
   goat: {
-    title: 'KAMBING BREEDING',
-    category: 'KOMODITI PETERNAKAN PT. ALGHONI ANAM',
+    title: 'GOAT MEAT',
+    category: 'PRODUK PT AGRONUSA MANDIRI • BOGOR',
     emoji: '🐐',
     headerBg: 'linear-gradient(135deg, hsl(32, 45%, 24%) 0%, hsl(40, 50%, 38%) 100%)',
     sections: [
       {
         badge: 'PRODUK UTAMA',
-        title: 'BIBIT UNGGUL KAMBING BREEDING',
-        desc: 'PT. ALGHONI ANAM MENYEDIAKAN BIBIT KAMBING PERAH DAN POTONG DENGAN GENETIK UNGGUL, PEMELIHARAAN TERSTANDAR BIOSECURITY, DAN TERVERIFIKASI ASUH (AMAN, SEHAT, UTUH, DAN HALAL).',
+        title: 'Daging Kambing Muda Segar',
+        desc: 'Goat Meat PT AgroNusa Mandiri berasal dari kambing pilihan usia optimal yang dipelihara di kandang berstandar biosecurity, menghasilkan serat daging lembut, rendah lemak berlebih, dan tidak berbau prengus.',
         img: IMAGES.goat,
         reverse: false,
-        tags: ['Bibit Bersertifikat', 'Rekam Medis Lengkap', 'Bebas Cacat & Penyakit', 'Siap Kawin & Bunting']
+        tags: ['Serat Daging Lembut', 'Aroma Alami Bersih', 'Standar Halal & ASUH', 'Siap Olah']
       },
       {
-        badge: 'PEJANTAN SIAP POTONG & AQIQAH',
-        title: 'JANTAN DEWASA',
-        desc: 'TERSEDIA PEJANTAN DEWASA SIAP POTONG DAN PRODUKTIF UMUR >2 TAHUN DENGAN RATA-RATA BOBOT 34.5KG. SANGAT COCOK UNTUK KEBUTUHAN AQIQAH, HEWAN QURBAN, MAUPUN SEBAGAI PEJANTAN INDUKAN PEMACAK UNGGUL.',
-        img: IMAGES.goat,
+        badge: 'KUALITAS TERJAGA',
+        title: 'Pemotongan & Pengemasan Higienis',
+        desc: 'Diproses dengan standar kebersihan ketat dan dikemas rapi dalam ukuran praktis untuk kebutuhan dapur rumah tangga, warung makan, hingga acara keluarga.',
+        img: IMAGES.hero,
         reverse: true,
-        tags: ['Bobot Rata-rata 34.5kg', 'Umur >2 Tahun', 'Siap Potong & Qurban', 'Sehat & Agresif']
-      },
-      {
-        badge: 'INDUKAN PRODUKTIF',
-        title: 'BETINA DEWASA & BREEDING',
-        desc: 'INDUKAN KAMBING PERAH DAN POTONG PILIHAN DARI RAS SAPERA, ETOWA (PE), DAN SAANEN DENGAN PRODUKSI SUSU TINGGI DAN FERTILITAS PRIMA UNTUK MEMASTIKAN POPULASI TERNAK ANDA CEPAT BERKEMBANG.',
-        img: IMAGES.goat,
-        reverse: false,
-        tags: ['Ras Sapera & PE', 'Produksi Susu Tinggi', 'Umur 2-3 Tahun', 'Garansi Sehat & Aktif']
+        tags: ['Kemasan Higienis', 'Potongan Sesuai Kebutuhan', 'Rantai Dingin Terkendali', 'Stok Terjaga']
       }
     ],
     promos: [
       {
-        badge: 'KATALOG INDUKAN',
-        title: 'BETINA DEWASA SIAP BUNTING',
-        prices: ['Rp. 1.800.000 / ekor'],
-        note: 'Tersedia tag nomor seri 053, 079, 020, 371 dengan rekam medis dan vaksin lengkap.',
+        badge: 'PAKET KELUARGA',
+        title: 'GOAT MEAT SEGAR 1 KG',
+        prices: ['Mulai Rp 120.000 / kg'],
+        note: 'Tersedia potongan paha, iga, dan daging tanpa tulang dalam kemasan vakum.',
         bgClass: 'card-blue-a'
       },
       {
-        badge: 'QURBAN & AQIQAH',
-        title: 'PEJANTAN DEWASA 34.5 KG',
-        prices: ['Mulai Rp. 2.500.000 / ekor'],
-        note: 'Gratis ongkir area Sukabumi dan sekitarnya dengan garansi ternak sehat sampai tujuan.',
+        badge: 'KEMITRAAN',
+        title: 'PASOKAN RUTIN KULINER',
+        prices: ['Hubungi 0800-1234-5678'],
+        note: 'Siap melayani pemesanan berkala dengan jaminan mutu PT AgroNusa Mandiri.',
         bgClass: 'card-blue-b'
       }
     ]
   },
 
   eggs: {
-    title: 'AYAM PETELUR',
-    category: 'KOMODITI PETERNAKAN PT. ALGHONI ANAM',
+    title: 'FRESH CHICKEN EGGS',
+    category: 'PRODUK PT AGRONUSA MANDIRI • BOGOR',
     emoji: '🥚',
     headerBg: 'linear-gradient(135deg, hsl(24, 50%, 25%) 0%, hsl(36, 60%, 40%) 100%)',
     sections: [
       {
         badge: 'PRODUK UTAMA',
-        title: 'TELUR AYAM SEGAR HARIAN',
-        desc: 'TELUR AYAM NEGERI KONSUMSI SEGAR YANG DIAMBIL LANGSUNG DARI KANDANG SETIAP PAGI. MEMILIKI CANGKANG COKLAT TEBAL, BERSIH, SERTA TERVERIFIKASI ASUH BEBAS CEMARAN ANTIBIOTIK DAN BAKTERI.',
+        title: 'Telur Ayam Segar Panen Harian',
+        desc: 'Fresh Chicken Eggs dipanen setiap pagi dari unit unggas petelur AgroNusa Farm. Memiliki cangkang tebal bersih, kuning telur cerah pekat, dan terjamin bebas residu bahan berbahaya.',
         img: IMAGES.eggs,
         reverse: false,
-        tags: ['Grade A Fresh Harian', 'Bebas Residu Kimia', 'Cangkang Tebal Bersih', 'Standar Higienis ASUH']
+        tags: ['Panen Segar Harian', 'Cangkang Tebal Bersih', 'Bebas Residu Antibiotik', 'Standar ASUH']
       },
       {
-        badge: 'RAS UNGGULAN',
-        title: 'AYAM RAS ISA BROWN',
-        desc: 'AYAM PETELUR RAS ISA BROWN DIPILIH KARENA KETAHANAN TUBUHNYA YANG PRIMA DI IKLIM TROPIS, KONVERSI PAKAN SANGAT EFISIEN, DAN KEMAMPUAN PRODUKSI TELUR KONSISTEN SEPANJANG TAHUN.',
+        badge: 'MANAJEMEN KANDANG',
+        title: 'Biosecurity & Pakan Alami Terukur',
+        desc: 'Pemeliharaan ayam petelur didukung sistem sanitasi rutin dan formulasi pakan bernutrisi seimbang sehingga mutu serta ukuran telur selalu konsisten sepanjang tahun.',
         img: IMAGES.hero,
         reverse: true,
-        tags: ['Tahan Iklim Tropis', 'Produktivitas Tinggi', 'Kuning Telur Pekat', 'Pakan Alami Berkualitas']
-      },
-      {
-        badge: 'SISTEM KANDANG',
-        title: 'BIOSECURITY SEMI-OTOMATIS',
-        desc: 'KANDANG KAMI MENGGUNAKAN VENTILASI TERKONTROL DAN SISTEM SANITASI PERIODIK SEHINGGA TELUR TERJAGA TETAP BERSIH, TIDAK TERCEMAR, DAN LANGSUNG MASUK KE BAGIAN PACKING SECARA STERIL.',
-        img: IMAGES.eggs,
-        reverse: false,
-        tags: ['Sanitasi Terjadwal', 'Pemilahan Cepat', 'Penyimpanan Sejuk', 'Kemasan Rapi & Aman']
+        tags: ['Sanitasi Terjadwal', 'Sortasi Mutu Ketat', 'Kemasan Aman Anti Pecah', 'Nutrisi Optimal']
       }
     ],
     promos: [
       {
-        badge: 'PAKET RETAIL',
-        title: 'TELUR SEGAR 1 TRAY (30 BUTIR)',
-        prices: ['Rp. 28.000 / tray'],
-        note: 'Sangat cocok untuk stok kebutuhan harian rumah tangga dan warung makan.',
+        badge: 'PAKET HARIAN',
+        title: 'FRESH CHICKEN EGGS (1 TRAY / 30 BUTIR)',
+        prices: ['Rp 28.000 / tray'],
+        note: 'Ideal untuk kebutuhan rumah tangga, toko bahan pangan, dan UMKM kuliner.',
         bgClass: 'card-blue-a'
       },
       {
-        badge: 'MITRA USAHA',
-        title: 'PASOKAN KATERING & RESTORAN',
+        badge: 'GROSIR & MITRA',
+        title: 'PASOKAN BAKERY & RESTORAN',
         prices: ['Harga Spesial Mitra Grosir'],
-        note: 'Jadwal pengiriman rutin berkala dengan jaminan kualitas dan ketersediaan stok.',
+        note: 'Pengiriman terjadwal langsung dari fasilitas AgroNusa Farm di Bogor.',
         bgClass: 'card-blue-b'
       }
     ]
   },
 
-  cow: {
-    title: 'SAPI PERAH & OLAHAN',
-    category: 'KOMODITI PETERNAKAN PT. ALGHONI ANAM',
-    emoji: '🐄',
+  milk: {
+    title: 'FRESH MILK',
+    category: 'PRODUK PT AGRONUSA MANDIRI • BOGOR',
+    emoji: '🥛',
     headerBg: 'linear-gradient(135deg, hsl(210, 48%, 22%) 0%, hsl(218, 42%, 36%) 100%)',
     sections: [
       {
         badge: 'PRODUK UTAMA',
-        title: 'SUSU SAPI MURNI SEGAR',
-        desc: 'SUSU SAPI SEGAR HASIL PEMERAHAN HIGIENIS PAGI DAN SORE HARI DARI SAPI PERAH SEHAT. MENGANDUNG PROTEIN TINGGI, KALSIUM ALAMI, DAN RASA GURIH ASLI TANPA TAMBAHAN AIR MAUPUN BAHAN KIMIA.',
+        title: 'Susu Sapi Murni Segar',
+        desc: 'Fresh Milk dari PT AgroNusa Mandiri diperoleh melalui pemerahan higienis pagi dan sore hari dari sapi perah sehat, kaya protein, kalsium alami, dan tanpa bahan pengawet.',
         img: IMAGES.cow,
         reverse: false,
-        tags: ['100% Murni Segar', 'Tanpa Bahan Pengawet', 'Pemerahan Higienis', 'Kaya Nutrisi & Kalsium']
+        tags: ['100% Susu Murni', 'Tanpa Pengawet', 'Pemerahan Higienis', 'Kaya Protein & Kalsium']
       },
       {
         badge: 'PROSES STERIL',
-        title: 'SUSU PASTEURISASI PREMIUM',
-        desc: 'DIPROSES MELALUI PASTEURISASI SUHU TERKONTROL UNTUK MEMATIKAN BAKTERI PATOGEN TANPA MERUSAK STRUKTUR GIZI DAN KESEGARAN ASLI SUSU SAPI, DIKEMAS DALAM BOTOL HIGIENIS TERSEGEL RAPAT.',
+        title: 'Pasteurisasi Suhu Terkontrol',
+        desc: 'Diproses melalui pasteurisasi modern untuk menjaga keamanan konsumsi tanpa merusak kandungan gizi serta rasa gurih alami susu segar, dikemas dalam botol tersegel rapat.',
         img: IMAGES.hero,
         reverse: true,
-        tags: ['Pasteurisasi Berstandar', 'Tahan 7-10 Hari Dingin', 'Botol Segel Higienis', 'Aroma Segar & Alami']
-      },
-      {
-        badge: 'INOVASI RASA',
-        title: 'CAFE LATTE & PRODUK OLAHAN',
-        desc: 'KAMI JUGA MENGHADIRKAN MINUMAN KEKINIAN BERGIZI TINGGI: CAFE LATTE DARI SUSU MURNI DAN KOPI PILIHAN, SUSU RASA COKELAT DAN STRAWBERRY, SERTA YOGURT ASLI YANG SANGAT SEHAT BAGI PENCERNAAN.',
-        img: IMAGES.cow,
-        reverse: false,
-        tags: ['Cafe Latte Creamy', 'Yogurt Alami', 'Cokelat Belgia', 'Siap Minum Dingin']
+        tags: ['Pasteurisasi Terstandar', 'Botol Segel Higienis', 'Simpan Dingin 4°C', 'Segar & Bernutrisi']
       }
     ],
     promos: [
       {
-        badge: 'MINUMAN SEGAR',
-        title: 'CAFE LATTE & FRESH MILK BOTTLE',
-        prices: ['Mulai Rp. 15.000 / botol'],
-        note: 'Tersedia ukuran 250ml dan 1 Liter, praktis dinikmati kapan saja.',
+        badge: 'BOTOL SEGAR',
+        title: 'FRESH MILK BOTTLE 1 LITER',
+        prices: ['Mulai Rp 18.000 / liter'],
+        note: 'Tersedia dalam kemasan botol higienis siap konsumsi maupun untuk bahan baku kafe.',
         bgClass: 'card-blue-a'
       },
       {
         badge: 'LANGGANAN',
-        title: 'PAKET LANGGANAN KELUARGA',
-        prices: ['Mulai Rp. 65.000 / minggu'],
-        note: 'Pengantaran rutin setiap pagi langsung ke rumah di Sukabumi & sekitarnya.',
+        title: 'PAKET LANGGANAN KELUARGA & KAFE',
+        prices: ['Pesan via info@agronusamandiri.example'],
+        note: 'Pengantaran rutin area Bogor dan sekitarnya dengan armada berpendingin.',
+        bgClass: 'card-blue-b'
+      }
+    ]
+  },
+
+  fertilizer: {
+    title: 'ORGANIC FERTILIZER',
+    category: 'PRODUK PT AGRONUSA MANDIRI • BOGOR',
+    emoji: '🌱',
+    headerBg: 'linear-gradient(135deg, hsl(142, 48%, 22%) 0%, hsl(95, 38%, 34%) 100%)',
+    sections: [
+      {
+        badge: 'AGROEKOSISTEM BERKELANJUTAN',
+        title: 'Pupuk Organik Matang Fermentasi',
+        desc: 'Organic Fertilizer merupakan bagian penting dari siklus peternakan terpadu PT AgroNusa Mandiri. Limbah organik ternak diolah melalui fermentasi terkontrol menjadi pupuk padat kaya unsur hara.',
+        img: IMAGES.hero,
+        reverse: false,
+        tags: ['100% Bahan Organik', 'Fermentasi Matang Sempurna', 'Bebas Bau Menyengat', 'Menyuburkan Tanah']
+      },
+      {
+        badge: 'MANFAAT PERTANIAN',
+        title: 'Dukungan Agribisnis Ramah Lingkungan',
+        desc: 'Membantu memperbaiki struktur tanah, meningkatkan daya serap air, dan mendukung pertumbuhan tanaman pangan, hortikultura, maupun perkebunan secara berkelanjutan.',
+        img: IMAGES.cow,
+        reverse: true,
+        tags: ['Kaya Mikroba Baik', 'Cocok untuk Hortikultura', 'Ramah Lingkungan', 'Kemasan Karung Praktis']
+      }
+    ],
+    promos: [
+      {
+        badge: 'KEMASAN KEBUN',
+        title: 'ORGANIC FERTILIZER 25 KG',
+        prices: ['Rp 25.000 / karung'],
+        note: 'Siap pakai untuk pekarangan rumah, kebun sayur, maupun tanaman hias.',
+        bgClass: 'card-blue-a'
+      },
+      {
+        badge: 'MITRA PERTANIAN',
+        title: 'PASOKAN KELOMPOK TANI & PERKEBUNAN',
+        prices: ['Harga Khusus Pembelian Curah'],
+        note: 'Solusi agribisnis berkelanjutan langsung dari unit pengolahan PT AgroNusa Mandiri.',
         bgClass: 'card-blue-b'
       }
     ]
@@ -358,7 +394,7 @@ const COMMODITIES = {
 };
 
 /* ----------------------------------------------------------
-   10. MODAL PENJELASAN KOMODITI (Foto ke-1)
+   10. MODAL PENJELASAN PRODUK
 ---------------------------------------------------------- */
 const productModal  = document.getElementById('productModal');
 const modalCloseBtn = document.getElementById('modalCloseBtn');
@@ -370,27 +406,27 @@ const modalBody     = document.getElementById('modalBody');
 const modalCtaBtn   = document.getElementById('modalCtaBtn');
 const modalTabBtns  = document.querySelectorAll('.modal-tab-btn');
 
-let currentCommodityKey = 'quail';
+let currentCommodityKey = 'beef';
 
-/** Render isi modal sesuai komoditi yang dipilih */
+/** Render isi modal sesuai produk yang dipilih */
 function renderModalContent(key) {
   const data = COMMODITIES[key];
-  if (!data) return;
+  if (!data || !modalBody) return;
 
   currentCommodityKey = key;
 
   // Update Header
-  modalEmoji.textContent    = data.emoji;
-  modalCategory.textContent = data.category;
-  modalTitle.textContent    = data.title;
-  modalHeader.style.background = data.headerBg;
+  if (modalEmoji)    modalEmoji.textContent    = data.emoji;
+  if (modalCategory) modalCategory.textContent = data.category;
+  if (modalTitle)    modalTitle.textContent    = data.title;
+  if (modalHeader)   modalHeader.style.background = data.headerBg;
 
   // Update Switcher Tabs
   modalTabBtns.forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-target') === key);
   });
 
-  // Render Sections (Mirip Foto 1)
+  // Render Sections
   let html = '';
 
   data.sections.forEach(sec => {
@@ -411,11 +447,11 @@ function renderModalContent(key) {
     `;
   });
 
-  // Render Promo & Order Flyers (Mirip 2 poster di bawah Foto 1)
+  // Render Promo & Order Cards
   if (data.promos && data.promos.length > 0) {
     html += `
       <div class="modal-promo-label">
-        <span>📢</span> Flyer &amp; Penawaran Spesial Komoditi Ini
+        <span>📢</span> Penawaran &amp; Informasi Pemesanan
       </div>
       <div class="modal-promo-grid">
         ${data.promos.map(promo => `
@@ -436,13 +472,17 @@ function renderModalContent(key) {
 
   modalBody.innerHTML = html;
 
-  // Update WhatsApp CTA
-  const waText = encodeURIComponent(`Halo PT. Alghoni Anam Farm, saya tertarik dengan informasi komoditi ${data.title}. Mohon info pemesanan dan ketersediaan stok.`);
-  modalCtaBtn.href = `https://wa.me/6281234567890?text=${waText}`;
+  // Update Email CTA
+  if (modalCtaBtn) {
+    const subject = encodeURIComponent(`Pemesanan & Informasi ${data.title} - PT AgroNusa Mandiri`);
+    const body    = encodeURIComponent(`Halo PT AgroNusa Mandiri (AgroNusa Farm),\n\nSaya tertarik dengan produk ${data.title}. Mohon informasi ketersediaan stok dan pemesanan.\n\nTerima kasih.`);
+    modalCtaBtn.href = `mailto:info@agronusamandiri.example?subject=${subject}&body=${body}`;
+  }
 }
 
 /** Buka Modal */
-function openProductModal(key = 'quail') {
+function openProductModal(key = 'beef') {
+  if (!productModal) return;
   renderModalContent(key);
   productModal.classList.add('open');
   productModal.setAttribute('aria-hidden', 'false');
@@ -451,6 +491,7 @@ function openProductModal(key = 'quail') {
 
 /** Tutup Modal */
 function closeProductModal() {
+  if (!productModal) return;
   productModal.classList.remove('open');
   productModal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
@@ -481,10 +522,9 @@ modalTabBtns.forEach(btn => {
   });
 });
 
-// Klik kartu komoditi di section #products untuk buka modal (Foto 1)
+// Klik kartu produk di section #products untuk buka modal
 document.querySelectorAll('.product-card').forEach(card => {
   card.addEventListener('click', (e) => {
-    // Kalau yang diklik bukan link anchor kontak eksternal
     const commKey = card.getAttribute('data-commodity');
     if (commKey) {
       e.preventDefault();
@@ -493,7 +533,7 @@ document.querySelectorAll('.product-card').forEach(card => {
   });
 });
 
-// Tombol khusus dalam kartu komoditi
+// Tombol khusus dalam kartu produk
 document.querySelectorAll('.product-card-btn').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -503,44 +543,45 @@ document.querySelectorAll('.product-card-btn').forEach(btn => {
 });
 
 /* ----------------------------------------------------------
-   11. TOAST NOTIFIKASI & SALIN KOORDINAT (Foto ke-2)
+   11. TOAST NOTIFIKASI & SALIN KOORDINAT (Bogor, West Java)
 ---------------------------------------------------------- */
-const toastMsg     = document.getElementById('toastMsg');
-const toastText    = document.getElementById('toastText');
+const toastMsg      = document.getElementById('toastMsg');
+const toastText     = document.getElementById('toastText');
 const copyCoordsBtn = document.getElementById('copyCoordsBtn');
+let toastTimer      = null;
 
 function showToast(text, duration = 3000) {
-  if (!toastMsg) return;
+  if (!toastMsg || !toastText) return;
   toastText.textContent = text;
   toastMsg.classList.add('show');
-  setTimeout(() => {
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
     toastMsg.classList.remove('show');
   }, duration);
 }
 
 if (copyCoordsBtn) {
   copyCoordsBtn.addEventListener('click', () => {
-    const coordsStr = '-6.941866, 106.955326';
+    const coordsStr = '-6.597147, 106.806039';
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(coordsStr).then(() => {
-        showToast(`📋 Koordinat ${coordsStr} berhasil disalin!`);
+        showToast(`📋 Koordinat ${coordsStr} (Bogor) berhasil disalin!`);
       }).catch(() => {
-        showToast(`📍 Koordinat: ${coordsStr}`);
+        showToast(`📍 Koordinat Bogor: ${coordsStr}`);
       });
     } else {
-      showToast(`📍 Koordinat: ${coordsStr}`);
+      showToast(`📍 Koordinat Bogor: ${coordsStr}`);
     }
   });
 }
 
 /* ----------------------------------------------------------
-   12. KATALOG PRODUK BUTTON (Foto ke-3)
+   12. KATALOG PRODUK BUTTON
 ---------------------------------------------------------- */
 const openCatalogFullBtn = document.getElementById('openCatalogFullBtn');
 if (openCatalogFullBtn) {
   openCatalogFullBtn.addEventListener('click', () => {
-    // Buka detail modal kambing atau arahkan ke WhatsApp
-    openProductModal('goat');
-    showToast('📖 Membuka detail katalog produk kambing...');
+    openProductModal('beef');
+    showToast('📖 Membuka detail katalog produk AgroNusa Farm...');
   });
 }
